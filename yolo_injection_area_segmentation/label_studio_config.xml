@@ -1,0 +1,37 @@
+<!--
+Example Label Studio configuration for YOLO Injection Area Segmentation
+
+Copy this configuration to your Label Studio project:
+1. Go to your Label Studio project
+2. Click on "Settings" -> "Labeling Interface"
+3. Paste this configuration
+4. Click "Save"
+-->
+
+<View>
+  <Header value="Injection Area Segmentation"/>
+
+  <Image name="image" value="$image" zoom="true" zoomBy="1.5"
+         zoomControl="true" rotateControl="true"/>
+
+  <!-- Polygon Labels for Segmentation -->
+  <PolygonLabels name="label" toName="image"
+                 strokeWidth="2" pointSize="small"
+                 opacity="0.7">
+    <Label value="arm_injection_area" background="red" alias="Arm Injection Area"/>
+  </PolygonLabels>
+
+  <!-- Optional: Rectangle Labels as fallback -->
+  <RectangleLabels name="bbox" toName="image"
+                   strokeWidth="2" opacity="0.5">
+    <Label value="arm_injection_area" background="red" alias="Arm Injection Area (Box)"/>
+  </RectangleLabels>
+
+  <!-- Optional: Choices for overall image classification -->
+  <Choices name="quality" toName="image" choice="single">
+    <Choice value="good" alias="Good Quality"/>
+    <Choice value="defective" alias="Defective"/>
+    <Choice value="unclear" alias="Unclear"/>
+  </Choices>
+
+</View>
