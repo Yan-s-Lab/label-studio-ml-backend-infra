@@ -5,6 +5,9 @@
 echo "🚀 Starting YOLO Injection Area Segmentation ML Backend"
 echo "=================================================="
 
+# Clear potentially problematic environment variables
+unset MODEL_DIR
+
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
     echo "📄 Loading configuration from .env file..."
@@ -14,6 +17,12 @@ if [ -f .env ]; then
 else
     echo "⚠️  No .env file found, using default configuration..."
     echo "💡 Copy .env.example to .env and customize your settings"
+fi
+
+# Ensure MODEL_DIR is not set to problematic paths
+if [ "$MODEL_DIR" = "/data/models" ] || [ "$MODEL_DIR" = "/data" ]; then
+    echo "⚠️  Resetting MODEL_DIR from $MODEL_DIR to current directory for permission reasons"
+    unset MODEL_DIR
 fi
 
 # Set default environment variables (fallback values)
@@ -112,4 +121,20 @@ echo "🛑 To stop the server: Press Ctrl+C"
 echo ""
 
 # Start the server
-exec python _wsgi.py --port $PORT --host $HOST --log-level $LOG_LEVEL
+echo "🔧 Environment variables being passed to Python:"
+echo "   LABEL_STUDIO_URL=$LABEL_STUDIO_URL"
+echo "   LABEL_STUDIO_API_KEY=${LABEL_STUDIO_API_KEY:0:20}..."
+echo "   LOG_LEVEL=$LOG_LEVEL"
+echo ""
+
+exec env LABEL_STUDIO_URL="$LABEL_STUDIO_URL" \
+         LABEL_STUDIO_API_KEY="$LABEL_STUDIO_API_KEY" \
+         CONFIDENCE_THRESHOLD="$CONFIDENCE_THRESHOLD" \
+         IOU_THRESHOLD="$IOU_THRESHOLD" \
+         IMAGE_SIZE="$IMAGE_SIZE" \
+         DEVICE="$DEVICE" \
+         MAX_DETECTIONS="$MAX_DETECTIONS" \
+         LOG_LEVEL="$LOG_LEVEL" \
+         python _wsgi.py --port $PORT --host $HOST --log-level $LOG_LEVEL
+
+# python _wsgi.py --port 9090 --host 0.0.0.0 --log-level DEBUG
