@@ -58,7 +58,7 @@ class YOLOInjectionAreaSegmentation(LabelStudioMLBase):
         except Exception as e:
             logger.error(f"Error loading model: {e}")
             raise e
-
+    # 继承了MLBase
     def predict(self, tasks: List[Dict], context: Optional[Dict] = None, **kwargs) -> ModelResponse:
         """ Run YOLO segmentation inference on input images
             :param tasks: Label Studio tasks in JSON format
@@ -254,20 +254,28 @@ class YOLOInjectionAreaSegmentation(LabelStudioMLBase):
             return None
 
     def try_fallback_path_resolution(self, image_url: str) -> Optional[str]:
-        """Try to resolve Label Studio local file path manually"""
+        """Try to resolve Label Studio local file path manually with smart path mapping"""
         try:
             logger.debug(f"🔄 Attempting manual path resolution for: {image_url}")
 
             # Parse the Label Studio local file URL
-            # Format: /data/local-files/?d=ComfyUI/output/flux_00376_.png
+            # Format: /data/local-files/?d=synthetic-data/ComfyUI/output/flux_00376_.png
+            # Format: /data/local-files/?d=injection-site-real-data/real_data_arm/real105.png
             if '?d=' in image_url:
                 # Extract the relative path after ?d=
                 relative_path = image_url.split('?d=', 1)[1]
                 logger.debug(f"📁 Extracted relative path: {relative_path}")
 
-                # Try common Label Studio data directories
+                # 智能路径映射：根据路径前缀确定正确的基础路径
+                resolved_path = self.smart_path_mapping(relative_path)
+                if resolved_path:
+                    return resolved_path
+
+                # 如果智能映射失败，尝试通用路径
+                logger.debug(f"🔄 Smart mapping failed, trying common paths...")
                 possible_base_paths = [
-                    "/home/yan/StudioSpace/AI_Annotation_Studio/core_work_flow/storage",
+                    "/shared-storage",  # 统一的共享存储路径
+                    "/home/yan/StudioSpace/AI_Annotation_Studio/core_work_flow/storage",  # 原有路径作为备用
                     "/data",
                     "/app/data",
                     "/opt/heartex/data",
@@ -294,6 +302,55 @@ class YOLOInjectionAreaSegmentation(LabelStudioMLBase):
         except Exception as e:
             logger.error(f"❌ Error in fallback path resolution: {e}")
             logger.exception("Full traceback:")
+            return None
+
+    def smart_path_mapping(self, relative_path: str) -> Optional[str]:
+        """智能路径映射：根据相对路径自动确定正确的基础路径"""
+        try:
+            logger.debug(f"🧠 Smart path mapping for: {relative_path}")
+
+            # 定义路径映射规则
+            path_mappings = {
+                # 合成数据路径映射
+                "synthetic-data/": "/shared-storage/synthetic-data/",
+                "ComfyUI/": "/shared-storage/synthetic-data/",  # 简化路径也映射到合成数据
+
+                # 真实数据路径映射
+                "injection-site-real-data/": "/shared-storage/injection-site-real-data/",
+                "real_data_arm/": "/shared-storage/injection-site-real-data/",  # 简化路径也映射到真实数据
+            }
+
+            # 尝试匹配路径前缀
+            for prefix, base_path in path_mappings.items():
+                if relative_path.startswith(prefix):
+                    # 移除前缀，构建完整路径
+                    remaining_path = relative_path[len(prefix):]
+                    full_path = os.path.join(base_path, remaining_path)
+                    logger.debug(f"🎯 Mapped {prefix} -> {base_path}, full path: {full_path}")
+
+                    if os.path.exists(full_path):
+                        logger.info(f"✅ Smart mapping successful: {full_path}")
+                        return full_path
+                    else:
+                        logger.debug(f"❌ Mapped path does not exist: {full_path}")
+
+                # 也尝试直接在基础路径下查找
+                direct_path = os.path.join(base_path, relative_path)
+                if os.path.exists(direct_path):
+                    logger.info(f"✅ Direct mapping successful: {direct_path}")
+                    return direct_path
+
+            # 如果没有匹配的前缀，尝试在统一的 /shared-storage/ 下查找
+            unified_path = os.path.join("/shared-storage", relative_path)
+            if os.path.exists(unified_path):
+                logger.info(f"✅ Unified path mapping successful: {unified_path}")
+                return unified_path
+
+            logger.debug(f"❌ Smart mapping failed for: {relative_path}")
+            return None
+
+        except Exception as e:
+            logger.error(f"❌ Error in smart path mapping: {e}")
             return None
 
     def convert_results_to_ls_format(self, results, task: Dict) -> Dict:
@@ -474,7 +531,8 @@ class YOLOInjectionAreaSegmentation(LabelStudioMLBase):
 
         # Fallback to class mapping
         return CLASS_MAPPING.get(class_id, f"class_{class_id}")
-
+    
+    # 继承了MLBase
     def fit(self, event, data, **kwargs):
         """
         This method is called each time an annotation is created or updated

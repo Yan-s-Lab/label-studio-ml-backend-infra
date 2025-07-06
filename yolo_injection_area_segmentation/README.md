@@ -13,6 +13,10 @@
 
 ## 🚀 快速开始
 
+### 看在前
+我们可以快速了解一些阿label-studio-backend的核心架构逻辑:
+**[Deepwiki Doc of label-studio-ml-backend](https://deepwiki.com/HumanSignal/label-studio-ml-backend/1.1-getting-started12312)**
+
 ### 1️⃣ 一键启动
 ```bash
 # 进入项目目录
@@ -102,7 +106,19 @@ LOG_LEVEL=INFO
 ### 🎯 支持的图像格式
 - **本地绝对路径**: `/path/to/image.jpg`
 - **Label Studio本地文件**: `/data/local-files/?d=folder/image.jpg`
+  > ⚠️ **重要说明**: `/data/local-files/` 是 **Label Studio框架的内置标准前缀**，不是用户配置的。
+  > 这是Label Studio用于安全访问本地存储文件的统一URL格式。
 - **HTTP/HTTPS URL**: `https://example.com/image.jpg`
+
+### 🗂️ 智能路径映射
+系统支持智能路径映射，自动识别不同数据源：
+
+| Label Studio路径 | 映射到实际路径 | 说明 |
+|------------------|---------------|------|
+| `/data/local-files/?d=synthetic-data/ComfyUI/output/image.png` | `/shared-storage/synthetic-data/ComfyUI/output/image.png` | 合成数据 |
+| `/data/local-files/?d=injection-site-real-data/real_data_arm/image.png` | `/shared-storage/injection-site-real-data/real_data_arm/image.png` | 真实数据 |
+| `/data/local-files/?d=ComfyUI/output/image.png` | `/shared-storage/synthetic-data/ComfyUI/output/image.png` | 简化路径自动映射 |
+| `/data/local-files/?d=real_data_arm/image.png` | `/shared-storage/injection-site-real-data/real_data_arm/image.png` | 简化路径自动映射 |
 
 ### 📊 模型性能
 - **精度**: 高精度注射区域检测
@@ -142,6 +158,7 @@ curl -X POST http://localhost:9090/predict \
 | CUDA内存不足 | 设置 `DEVICE=cpu` |
 | 端口被占用 | 更改 `PORT` 或终止占用进程 |
 | API认证失败 | 更新 `LABEL_STUDIO_API_KEY` |
+| ==401 authorization issue==| 上面的方法有问题，需要在label studio的Organization 页面（点击左侧图标旁的三道杠图标展开菜单可以看到） API Token 设置里取消Persional access tokens，选择legacy tokens|
 
 ### 调试模式
 ```bash

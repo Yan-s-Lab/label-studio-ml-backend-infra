@@ -5,7 +5,7 @@ import os
 
 # Model configuration
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "train6", "weights", "best.pt")
-MODEL_VERSION = "1.0.0"
+MODEL_VERSION = "yolo11-1.0.0"
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.25"))
 IOU_THRESHOLD = float(os.getenv("IOU_THRESHOLD", "0.7"))
 IMAGE_SIZE = int(os.getenv("IMAGE_SIZE", "640"))

@@ -297,6 +297,12 @@ curl -X POST http://localhost:9090/webhook \
    {"image": "/data/local-files/?d=folder/photo.jpg"}
    ```
 
+   > 📋 **重要说明**:
+   > - `/data/local-files/` 是 **Label Studio框架的内置标准前缀**
+   > - 这不是用户配置的路径，而是Label Studio的固定URL格式
+   > - `?d=` 后面的路径是相对于Label Studio数据目录的相对路径
+   > - Label Studio会自动将此URL转换为实际的文件路径
+
 3. **HTTP/HTTPS URL**:
    ```json
    {"image": "https://example.com/photo.jpg"}
